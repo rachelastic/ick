@@ -151,22 +151,35 @@ export async function PATCH() {
       },
     });
 
-    const sentimentBreakdown = (await prisma.ick.groupBy({
+    // Fix: use type inference and then map to clean array
+    const sentimentRaw = await prisma.ick.groupBy({
       by: ["sentiment"],
       _count: { sentiment: true },
-    })) as SentimentItem[];
+    });
+    const sentimentBreakdown: SentimentItem[] = sentimentRaw.map((item) => ({
+      sentiment: item.sentiment,
+      _count: { sentiment: item._count.sentiment },
+    }));
 
-    const categoryBreakdown = (await prisma.ick.groupBy({
+    const categoryRaw = await prisma.ick.groupBy({
       by: ["category"],
       _count: { category: true },
       orderBy: { _count: { category: "desc" } },
       take: 10,
-    })) as CategoryItem[];
+    });
+    const categoryBreakdown: CategoryItem[] = categoryRaw.map((item) => ({
+      category: item.category,
+      _count: { category: item._count.category },
+    }));
 
-    const userTypeBreakdown = (await prisma.ick.groupBy({
+    const userTypeRaw = await prisma.ick.groupBy({
       by: ["user_type"],
       _count: { user_type: true },
-    })) as UserTypeItem[];
+    });
+    const userTypeBreakdown: UserTypeItem[] = userTypeRaw.map((item) => ({
+      user_type: item.user_type,
+      _count: { user_type: item._count.user_type },
+    }));
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
