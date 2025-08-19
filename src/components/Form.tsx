@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { X, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
 
 const TAGS = ["relationship", "product", "work & productivity", "minor"];
 
-export default function IckSubmissionForm(): JSX.Element {
+export default function IckSubmissionForm(): React.ReactElement {
   const [ick, setIck] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
