@@ -3,20 +3,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  Brain,
-  TrendingUp,
-  Users,
-  Zap,
-  Eye,
-  Target,
-  Lightbulb,
-  Coffee,
   Sparkles,
-  DollarSign,
-  Rocket,
-  Search,
-  Plus,
   MessageSquare,
+  Eye,
+  Rocket,
   BarChart3,
 } from "lucide-react";
 import {
@@ -51,7 +41,7 @@ const DynamicHeroLanding = () => {
     buildersCommunity: 892,
   });
 
-  const [currentExample, setCurrentExample] = useState(0);
+  const [currentExample, setCurrentExample] = useState<number>(0);
   const opportunityIcks = [
     "Airport wifi that makes you watch ads to connect",
     "Parking meters that don&apos;t take cards in 2024",
@@ -141,7 +131,6 @@ const DynamicHeroLanding = () => {
   >([]);
 
   useEffect(() => {
-    // Generate random positions only on client side
     const positions = floatingIcons.map(() => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
@@ -153,7 +142,7 @@ const DynamicHeroLanding = () => {
       setCurrentExample((prev) => (prev + 1) % opportunityIcks.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [floatingIcons.length, opportunityIcks.length]);
 
   return (
     <div className="font-sans min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 text-slate-800 relative overflow-hidden">
@@ -260,7 +249,7 @@ const DynamicHeroLanding = () => {
 
             <div className="text-left">
               <div className="text-lg text-slate-600 mb-4 italic font-medium">
-                "{opportunityIcks[currentExample]}"
+                `"${opportunityIcks[currentExample]}"`
               </div>
               <div className="flex flex-wrap gap-3 justify-between items-center">
                 <div className="flex gap-3">
