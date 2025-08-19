@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { analyzeIck } from "@/lib/ai-analysis";
 
+
+
 const prisma = new PrismaClient();
 
 // GET all icks with optional filtering
@@ -125,6 +127,12 @@ export async function POST(req: Request) {
 }
 
 // PATCH (analytics)
+// Define item types
+type SentimentItem = { sentiment: string; _count: { sentiment: number } };
+type CategoryItem = { category: string; _count: { category: number } };
+type UserTypeItem = { user_type: string; _count: { user_type: number } };
+
+// PATCH (analytics endpoint)
 export async function PATCH() {
   try {
     console.log("📊 Fetching analytics...");
@@ -140,26 +148,44 @@ export async function PATCH() {
       },
     });
 
-    type SentimentItem = { sentiment: string; _count: { sentiment: number } };
-    type CategoryItem = { category: string; _count: { category: number } };
-    type UserTypeItem = { user_type: string; _count: { user_type: number } };
-
-    const sentimentBreakdown: SentimentItem[] = await prisma.ick.groupBy({
+    const sentimentBreakdown = (await prisma.ick.groupBy({
       by: ["sentiment"],
       _count: { sentiment: true },
-    });
+    })) as SentimentItem[];
 
-    const categoryBreakdown: CategoryItem[] = await prisma.ick.groupBy({
+    const categoryBreakdown = (await prisma.ick.groupBy({
       by: ["category"],
       _count: { category: true },
       orderBy: { _count: { category: "desc" } },
       take: 10,
-    });
+    })) as CategoryItem[];
 
-    const userTypeBreakdown: UserTypeItem[] = await prisma.ick.groupBy({
+    const userTypeBreakdown = (await prisma.ick.groupBy({
       by: ["user_type"],
       _count: { user_type: true },
-    });
+    })) as UserTypeItem[];
+
+    let topOpportunities = [];
+    if (hasNewFields) {
+      topOpportunities = await prisma.ick.findMany({
+        where: {
+          opportunity_score: { gte: 6 },
+          severity: { gte: 5 },
+        },
+        orderBy: [
+          { opportunity_score: "desc" },
+          { severity: "desc" },
+          { createdAt: "desc" },
+        ],
+        take: 6,
+      });
+    } else {
+      topOpportunities = await prisma.ick.findMany({
+        where: { severity: { gte: 7 } },
+        orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+        take: 6,
+      });
+    }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const recentTrends = await prisma.ick.findMany({
@@ -186,29 +212,13 @@ export async function PATCH() {
       where: { severity: { gte: 8 } },
     });
 
-    let topOpportunities = [];
-    if (hasNewFields) {
-      topOpportunities = await prisma.ick.findMany({
-        where: { opportunity_score: { gte: 6 }, severity: { gte: 5 } },
-        orderBy: [
-          { opportunity_score: "desc" },
-          { severity: "desc" },
-          { createdAt: "desc" },
-        ],
-        take: 6,
-      });
-    } else {
-      topOpportunities = await prisma.ick.findMany({
-        where: { severity: { gte: 7 } },
-        orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
-        take: 6,
-      });
-    }
-
     let criticalIssues = [];
     if (hasNewFields) {
       criticalIssues = await prisma.ick.findMany({
-        where: { severity: { gte: 7 }, opportunity_score: { lte: 4 } },
+        where: {
+          severity: { gte: 7 },
+          opportunity_score: { lte: 4 },
+        },
         orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
         take: 5,
       });
@@ -220,11 +230,16 @@ export async function PATCH() {
       });
     }
 
-    // Calculate dominant sentiment safely
-    const dominantSentiment = sentimentBreakdown.reduce(
-      (prev, curr) => (curr._count.sentiment > prev._count.sentiment ? curr : prev),
-      { sentiment: "acceptable", _count: { sentiment: 0 } }
-    ).sentiment;
+    const insights = {
+      most_common_category: categoryBreakdown[0]?.category || "general",
+      dominant_sentiment:
+        sentimentBreakdown.reduce((prev, curr) =>
+          curr._count.sentiment > prev._count.sentiment ? curr : prev
+        )?.sentiment || "acceptable",
+      trending_up: recentTrends.length > totalIcks * 0.1,
+      opportunity_rich:
+        hasNewFields && (avgStats._avg.opportunity_score ?? 0) > 6,
+    };
 
     const analytics = {
       total_icks: totalIcks,
@@ -242,14 +257,10 @@ export async function PATCH() {
       critical_issues: criticalIssues,
       recent_trends: recentTrends,
 
-      insights: {
-        most_common_category: categoryBreakdown[0]?.category || "general",
-        dominant_sentiment: dominantSentiment,
-        trending_up: recentTrends.length > totalIcks * 0.1,
-        opportunity_rich: hasNewFields && (avgStats._avg.opportunity_score ?? 0) > 6,
-      },
+      insights,
     };
 
+    console.log("✅ Analytics fetched successfully");
     return NextResponse.json(analytics);
   } catch (error) {
     console.error("❌ Error fetching analytics:", error);
@@ -259,6 +270,7 @@ export async function PATCH() {
     );
   }
 }
+
 
 
 // PUT endpoint for updating ick engagement
