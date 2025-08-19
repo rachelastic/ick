@@ -199,9 +199,7 @@ const DynamicHeroLanding = () => {
                     userType === type
                       ? type === "vent"
                         ? "bg-gradient-to-r from-red-400 to-orange-400 text-white shadow-md"
-                        : type === "build"
-                        ? "bg-gradient-to-r from-blue-400 to-purple-400 text-white shadow-md"
-                        : "bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-md"
+                        : "bg-gradient-to-r from-blue-400 to-purple-400 text-white shadow-md"
                       : "text-slate-600 hover:text-slate-800"
                   }`}
                 >
@@ -249,7 +247,7 @@ const DynamicHeroLanding = () => {
 
             <div className="text-left">
               <div className="text-lg text-slate-600 mb-4 italic font-medium">
-                `"${opportunityIcks[currentExample]}"`
+                &quot;{opportunityIcks[currentExample]}&quot;
               </div>
               <div className="flex flex-wrap gap-3 justify-between items-center">
                 <div className="flex gap-3">
@@ -303,10 +301,7 @@ const DynamicHeroLanding = () => {
                   className={`absolute inset-0 bg-gradient-to-r ${content.bgGradient
                     .replace("from-", "from-")
                     .replace("via-", "via-")
-                    .replace(
-                      "to-",
-                      "to-"
-                    )} opacity-0 group-hover:opacity-100 transition-opacity`}
+                    .replace("to-", "to-")} opacity-0 group-hover:opacity-100 transition-opacity`}
                   style={{ filter: "brightness(110%)" }}
                 ></div>
                 <span className="relative flex items-center gap-3">
@@ -392,7 +387,7 @@ const DynamicHeroLanding = () => {
             {[
               {
                 q: "What is even an ick?",
-                a: "An `ick` is that tiny detail that instantly kills the vibe — irrational, petty, but totally valid. It could be how someone eats, types, or breathes too loud. Nothing is too small to be ick-worthy.",
+                a: "An &apos;ick&apos; is that tiny detail that instantly kills the vibe — irrational, petty, but totally valid. It could be how someone eats, types, or breathes too loud. Nothing is too small to be ick-worthy.",
               },
               {
                 q:
