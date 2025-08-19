@@ -67,7 +67,7 @@ const DynamicHeroLanding = () => {
           subheadline:
             "That app that crashes right when you need it? The subscription you cannot cancel? Share it here – someone is listening.",
           description:
-            "Join 3,247 people venting their product frustrations to a community that actually gets it. Your pain is valid, you re not alone, and sometimes your complaints actually get fixed.",
+            "Join 3,247 people venting their product frustrations to a community that actually gets it. Your pain is valid, you&apos;re not alone, and sometimes your complaints actually get fixed.",
           primaryCTA: "Start Venting",
           secondaryCTA: "See Other Pains",
           primaryIcon: <MessageSquare size={20} />,
@@ -136,14 +136,16 @@ const DynamicHeroLanding = () => {
     "✨",
   ]);
 
-  const [iconPositions, setIconPositions] = useState<Array<{left: number, top: number, duration: number}>>([]);
+  const [iconPositions, setIconPositions] = useState<
+    Array<{ left: number; top: number; duration: number }>
+  >([]);
 
   useEffect(() => {
     // Generate random positions only on client side
     const positions = floatingIcons.map(() => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
-      duration: 4 + Math.random() * 2
+      duration: 4 + Math.random() * 2,
     }));
     setIconPositions(positions);
 
@@ -157,20 +159,21 @@ const DynamicHeroLanding = () => {
     <div className="font-sans min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 text-slate-800 relative overflow-hidden">
       {/* Floating Icons */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {iconPositions.length > 0 && floatingIcons.map((icon, i) => (
-          <div
-            key={i}
-            className="absolute animate-bounce text-3xl opacity-20"
-            style={{
-              left: `${iconPositions[i].left}%`,
-              top: `${iconPositions[i].top}%`,
-              animationDelay: `${i * 0.7}s`,
-              animationDuration: `${iconPositions[i].duration}s`,
-            }}
-          >
-            {icon}
-          </div>
-        ))}
+        {iconPositions.length > 0 &&
+          floatingIcons.map((icon, i) => (
+            <div
+              key={i}
+              className="absolute animate-bounce text-3xl opacity-20"
+              style={{
+                left: `${iconPositions[i].left}%`,
+                top: `${iconPositions[i].top}%`,
+                animationDelay: `${i * 0.7}s`,
+                animationDuration: `${iconPositions[i].duration}s`,
+              }}
+            >
+              {icon}
+            </div>
+          ))}
       </div>
 
       {/* Dynamic Hero Section */}
@@ -334,7 +337,7 @@ const DynamicHeroLanding = () => {
               </span>
             </button>
           </div>
-          
+
           {/* Dynamic Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {content.stats.map((stat: ContentStat, index: number) => (
@@ -389,7 +392,9 @@ const DynamicHeroLanding = () => {
         {/* FAQ Section */}
         <section className="max-w-4xl w-full mx-auto mt-16 px-4">
           <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-8 text-center">
-            <span className={`bg-gradient-to-r ${content.bgGradient} bg-clip-text text-transparent`}>
+            <span
+              className={`bg-gradient-to-r ${content.bgGradient} bg-clip-text text-transparent`}
+            >
               Frequently Asked
             </span>{" "}
             Questions
@@ -401,32 +406,48 @@ const DynamicHeroLanding = () => {
                 a: "An `ick` is that tiny detail that instantly kills the vibe — irrational, petty, but totally valid. It could be how someone eats, types, or breathes too loud. Nothing is too small to be ick-worthy.",
               },
               {
-                q: userType === "vent" ? "How does my ick matter?" : "How can I find validated opportunities?",
-                a: userType === "vent" 
-                  ? "Your ick adds to a collective dataset that helps us analyze product pain points and user frustrations. Every complaint submitted teaches our community what real problems look like and validates shared experiences."
-                  : "Browse through thousands of real user frustrations, sorted by validation score and market opportunity. Each complaint represents a potential business idea that&apos;s already been validated by community sentiment.",
+                q:
+                  userType === "vent"
+                    ? "How does my ick matter?"
+                    : "How can I find validated opportunities?",
+                a:
+                  userType === "vent"
+                    ? "Your ick adds to a collective dataset that helps us analyze product pain points and user frustrations. Every complaint submitted teaches our community what real problems look like and validates shared experiences."
+                    : "Browse through thousands of real user frustrations, sorted by validation score and market opportunity. Each complaint represents a potential business idea that&apos;s already been validated by community sentiment.",
               },
               {
-                q: userType === "vent" ? "Will my complaints actually get fixed?" : "How do I know these are real opportunities?",
-                a: userType === "vent"
-                  ? "While we can&apos;t guarantee fixes, many companies do monitor user feedback. Your complaints become part of a public record that product teams can discover, and community pressure often leads to real changes."
-                  : "Every opportunity is backed by real user complaints with community validation scores. You can see exactly how many people share the same frustration, making it easier to assess market demand before building.",
+                q:
+                  userType === "vent"
+                    ? "Will my complaints actually get fixed?"
+                    : "How do I know these are real opportunities?",
+                a:
+                  userType === "vent"
+                    ? "While we can&apos;t guarantee fixes, many companies do monitor user feedback. Your complaints become part of a public record that product teams can discover, and community pressure often leads to real changes."
+                    : "Every opportunity is backed by real user complaints with community validation scores. You can see exactly how many people share the same frustration, making it easier to assess market demand before building.",
               },
               {
-                q: userType === "vent" ? "Is this just venting or does it help?" : "What kind of opportunities can I find?",
-                a: userType === "vent"
-                  ? "It&apos;s both! Venting feels good and validates your experience, but it also contributes to a database that helps identify systemic product issues. Your frustration might be the data point that sparks the next big solution."
-                  : "From simple browser extensions to full SaaS platforms - opportunities range from quick weekend projects to million-dollar ideas. Each complaint includes context about user pain levels and potential market size.",
+                q:
+                  userType === "vent"
+                    ? "Is this just venting or does it help?"
+                    : "What kind of opportunities can I find?",
+                a:
+                  userType === "vent"
+                    ? "It&apos;s both! Venting feels good and validates your experience, but it also contributes to a database that helps identify systemic product issues. Your frustration might be the data point that sparks the next big solution."
+                    : "From simple browser extensions to full SaaS platforms - opportunities range from quick weekend projects to million-dollar ideas. Each complaint includes context about user pain levels and potential market size.",
               },
               {
-                q: userType === "vent" ? "Can I stay anonymous?" : "How accurate is the opportunity scoring?",
-                a: userType === "vent"
-                  ? "Absolutely. You can share your frustrations without any personal information. We focus on the product problems, not who&apos;s reporting them."
-                  : "Our scoring combines community validation, market signals, and technical feasibility analysis. While not perfect, it&apos;s based on real user data and helps prioritize which problems are worth solving first.",
+                q:
+                  userType === "vent"
+                    ? "Can I stay anonymous?"
+                    : "How accurate is the opportunity scoring?",
+                a:
+                  userType === "vent"
+                    ? "Absolutely. You can share your frustrations without any personal information. We focus on the product problems, not who&apos;s reporting them."
+                    : "Our scoring combines community validation, market signals, and technical feasibility analysis. While not perfect, it&apos;s based on real user data and helps prioritize which problems are worth solving first.",
               },
             ].map((item) => (
-              <AccordionItem 
-                key={item.q} 
+              <AccordionItem
+                key={item.q}
                 value={item.q}
                 className="bg-white/60 backdrop-blur-sm rounded-2xl border border-orange-200 px-6 mb-3 hover:bg-white/80 transition-all duration-300"
               >
