@@ -1,6 +1,6 @@
 // src/app/api/icks/route.ts
 import { NextResponse } from "next/server";
-import { Prisma, PrismaClient } from "@/generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import { analyzeIck } from "@/lib/ai-analysis";
 
 const prisma = new PrismaClient();
@@ -16,12 +16,13 @@ export async function GET(req: Request) {
     const minOpportunity = searchParams.get("min_opportunity");
     const userType = searchParams.get("user_type");
 
-    const where: Prisma.IckWhereInput = {};
+    const where: any = {}; // Use `any` because Prisma doesn't export IckWhereInput
 
     if (category) where.category = category;
     if (sentiment) where.sentiment = sentiment;
     if (minSeverity) where.severity = { gte: parseInt(minSeverity, 10) };
-    if (minOpportunity) where.opportunity_score = { gte: parseInt(minOpportunity, 10) };
+    if (minOpportunity)
+      where.opportunity_score = { gte: parseInt(minOpportunity, 10) };
     if (userType) where.user_type = userType;
 
     const icks = await prisma.ick.findMany({
@@ -33,25 +34,16 @@ export async function GET(req: Request) {
     return NextResponse.json(icks);
   } catch (error) {
     console.error("Error fetching icks:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch icks" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch icks" }, { status: 500 });
   }
 }
 
 // POST a new ick with AI analysis
 export async function POST(req: Request) {
   try {
-    const body: {
-      content?: string;
-      tags?: string[];
-      user_type?: string;
-    } = await req.json();
-
+    const body: { content?: string; tags?: string[]; user_type?: string } = await req.json();
     const { content, tags: userTags, user_type = "venter" } = body;
 
-    // Validation
     if (!content || typeof content !== "string") {
       return NextResponse.json(
         { error: "Content is required and must be a string" },
@@ -75,13 +67,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Basic spam/duplicate detection
+    // Duplicate detection
     const recentIck = await prisma.ick.findFirst({
       where: {
         content: trimmedContent,
-        createdAt: {
-          gte: new Date(Date.now() - 5 * 60 * 1000), // Last 5 minutes
-        },
+        createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
       },
     });
 
@@ -93,25 +83,13 @@ export async function POST(req: Request) {
     }
 
     console.log("🤖 Analyzing ick with AI...");
-
-    // AI Analysis
     const analysis = await analyzeIck(trimmedContent);
 
-    console.log("✅ AI Analysis completed:", {
-      sentiment: analysis.sentiment,
-      severity: analysis.severity,
-      opportunity: analysis.opportunity_score,
-      category: analysis.category,
-    });
+    console.log("✅ AI Analysis completed:", analysis);
 
-    // Combine user tags with AI-generated tags
-    const combinedTags = [
-      ...(Array.isArray(userTags) ? userTags : []),
-      ...analysis.tags,
-    ];
-    const uniqueTags = [...new Set(combinedTags)].slice(0, 8); // Limit to 8 tags
+    const combinedTags = [...(Array.isArray(userTags) ? userTags : []), ...analysis.tags];
+    const uniqueTags = [...new Set(combinedTags)].slice(0, 8);
 
-    // Create the ick
     const newIck = await prisma.ick.create({
       data: {
         content: trimmedContent,
@@ -128,36 +106,25 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("✅ Created Ick with ID:", newIck.id);
-
     return NextResponse.json(
-      {
-        ...newIck,
-        analysis: {
-          reasoning: analysis.reasoning,
-          confidence: "high", // You could add confidence scoring later
-        },
-      },
+      { ...newIck, analysis: { reasoning: analysis.reasoning, confidence: "high" } },
       { status: 201 }
     );
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("❌ Error creating Ick:", error.message);
-    }
+    if (error instanceof Error) console.error("❌ Error creating Ick:", error.message);
     return NextResponse.json(
       {
         error: "Failed to analyze and create ick",
-        details:
-          process.env.NODE_ENV === "development" && error instanceof Error
-            ? error.message
-            : undefined,
+        details: process.env.NODE_ENV === "development" && error instanceof Error
+          ? error.message
+          : undefined,
       },
       { status: 500 }
     );
   }
 }
 
-// PATCH (analytics endpoint) — unchanged except typing is stricter
+// PATCH (analytics)
 export async function PATCH() {
   try {
     console.log("📊 Fetching analytics...");
@@ -173,45 +140,30 @@ export async function PATCH() {
       },
     });
 
-    const sentimentBreakdown = await prisma.ick.groupBy({
+    type SentimentItem = { sentiment: string; _count: { sentiment: number } };
+    type CategoryItem = { category: string; _count: { category: number } };
+    type UserTypeItem = { user_type: string; _count: { user_type: number } };
+
+    const sentimentBreakdown: SentimentItem[] = await prisma.ick.groupBy({
       by: ["sentiment"],
       _count: { sentiment: true },
     });
 
-    const categoryBreakdown = await prisma.ick.groupBy({
+    const categoryBreakdown: CategoryItem[] = await prisma.ick.groupBy({
       by: ["category"],
       _count: { category: true },
       orderBy: { _count: { category: "desc" } },
       take: 10,
     });
 
-    let topOpportunities = [];
-    if (hasNewFields) {
-      topOpportunities = await prisma.ick.findMany({
-        where: {
-          opportunity_score: { gte: 6 },
-          severity: { gte: 5 },
-        },
-        orderBy: [
-          { opportunity_score: "desc" },
-          { severity: "desc" },
-          { createdAt: "desc" },
-        ],
-        take: 6,
-      });
-    } else {
-      topOpportunities = await prisma.ick.findMany({
-        where: { severity: { gte: 7 } },
-        orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
-        take: 6,
-      });
-    }
+    const userTypeBreakdown: UserTypeItem[] = await prisma.ick.groupBy({
+      by: ["user_type"],
+      _count: { user_type: true },
+    });
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const recentTrends = await prisma.ick.findMany({
-      where: {
-        createdAt: { gte: sevenDaysAgo },
-      },
+      where: { createdAt: { gte: sevenDaysAgo } },
       select: {
         id: true,
         category: true,
@@ -230,22 +182,33 @@ export async function PATCH() {
       where: { createdAt: { gte: todayStart } },
     });
 
-    const userTypeBreakdown = await prisma.ick.groupBy({
-      by: ["user_type"],
-      _count: { user_type: true },
-    });
-
     const highSeverityCount = await prisma.ick.count({
       where: { severity: { gte: 8 } },
     });
 
+    let topOpportunities = [];
+    if (hasNewFields) {
+      topOpportunities = await prisma.ick.findMany({
+        where: { opportunity_score: { gte: 6 }, severity: { gte: 5 } },
+        orderBy: [
+          { opportunity_score: "desc" },
+          { severity: "desc" },
+          { createdAt: "desc" },
+        ],
+        take: 6,
+      });
+    } else {
+      topOpportunities = await prisma.ick.findMany({
+        where: { severity: { gte: 7 } },
+        orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+        take: 6,
+      });
+    }
+
     let criticalIssues = [];
     if (hasNewFields) {
       criticalIssues = await prisma.ick.findMany({
-        where: {
-          severity: { gte: 7 },
-          opportunity_score: { lte: 4 },
-        },
+        where: { severity: { gte: 7 }, opportunity_score: { lte: 4 } },
         orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
         take: 5,
       });
@@ -257,7 +220,11 @@ export async function PATCH() {
       });
     }
 
-    console.log("✅ Analytics fetched successfully");
+    // Calculate dominant sentiment safely
+    const dominantSentiment = sentimentBreakdown.reduce(
+      (prev, curr) => (curr._count.sentiment > prev._count.sentiment ? curr : prev),
+      { sentiment: "acceptable", _count: { sentiment: 0 } }
+    ).sentiment;
 
     const analytics = {
       total_icks: totalIcks,
@@ -277,34 +244,32 @@ export async function PATCH() {
 
       insights: {
         most_common_category: categoryBreakdown[0]?.category || "general",
-        dominant_sentiment:
-          sentimentBreakdown.reduce((prev, curr) =>
-            curr._count.sentiment > prev._count.sentiment ? curr : prev
-          )?.sentiment || "acceptable",
+        dominant_sentiment: dominantSentiment,
         trending_up: recentTrends.length > totalIcks * 0.1,
-        opportunity_rich:
-          hasNewFields && (avgStats._avg.opportunity_score ?? 0) > 6,
+        opportunity_rich: hasNewFields && (avgStats._avg.opportunity_score ?? 0) > 6,
       },
     };
 
     return NextResponse.json(analytics);
   } catch (error) {
     console.error("❌ Error fetching analytics:", error);
-    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch analytics" },
+      { status: 500 }
+    );
   }
 }
 
-// PUT endpoint for updating ick engagement (views, votes)
+
+// PUT endpoint for updating ick engagement
 export async function PUT(req: Request) {
   try {
     const body: { id?: string; action?: string } = await req.json();
     const { id, action } = body;
 
-    if (!id || !action) {
-      return NextResponse.json({ error: "ID and action are required" }, { status: 400 });
-    }
+    if (!id || !action) return NextResponse.json({ error: "ID and action are required" }, { status: 400 });
 
-    let updateData: Prisma.IckUpdateInput = {};
+    let updateData: any = {}; // Prisma.IckUpdateInput replaced with `any`
 
     switch (action) {
       case "view":
