@@ -3,15 +3,18 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { analyzeIck } from "@/lib/ai-analysis";
 
-// Define these types at the top of the file, right after imports
+const prisma = new PrismaClient();
+
+// --------------------
+// Type Definitions
+// --------------------
 type SentimentItem = { sentiment: string; _count: { sentiment: number } };
 type CategoryItem = { category: string; _count: { category: number } };
 type UserTypeItem = { user_type: string; _count: { user_type: number } };
 
-
-const prisma = new PrismaClient();
-
-// GET all icks with optional filtering
+// --------------------
+// GET all icks
+// --------------------
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -22,7 +25,7 @@ export async function GET(req: Request) {
     const minOpportunity = searchParams.get("min_opportunity");
     const userType = searchParams.get("user_type");
 
-    const where: any = {}; // Use `any` because Prisma doesn't export IckWhereInput
+    const where: any = {};
 
     if (category) where.category = category;
     if (sentiment) where.sentiment = sentiment;
@@ -44,10 +47,13 @@ export async function GET(req: Request) {
   }
 }
 
-// POST a new ick with AI analysis
+// --------------------
+// POST a new ick
+// --------------------
 export async function POST(req: Request) {
   try {
-    const body: { content?: string; tags?: string[]; user_type?: string } = await req.json();
+    const body: { content?: string; tags?: string[]; user_type?: string } =
+      await req.json();
     const { content, tags: userTags, user_type = "venter" } = body;
 
     if (!content || typeof content !== "string") {
@@ -90,7 +96,6 @@ export async function POST(req: Request) {
 
     console.log("🤖 Analyzing ick with AI...");
     const analysis = await analyzeIck(trimmedContent);
-
     console.log("✅ AI Analysis completed:", analysis);
 
     const combinedTags = [...(Array.isArray(userTags) ? userTags : []), ...analysis.tags];
@@ -130,7 +135,9 @@ export async function POST(req: Request) {
   }
 }
 
+// --------------------
 // PATCH (analytics)
+// --------------------
 export async function PATCH() {
   try {
     const totalIcks = await prisma.ick.count();
@@ -161,33 +168,48 @@ export async function PATCH() {
       _count: { user_type: true },
     })) as UserTypeItem[];
 
-    // ...rest of your analytics logic
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayCount = await prisma.ick.count({
+      where: { createdAt: { gte: todayStart } },
+    });
+
+    const highSeverityCount = await prisma.ick.count({
+      where: { severity: { gte: 8 } },
+    });
+
+    const analytics = {
+      total_icks: totalIcks,
+      avg_severity: avgStats._avg.severity,
+      avg_opportunity: hasNewFields ? avgStats._avg.opportunity_score : null,
+      today_count: todayCount,
+      high_severity_count: highSeverityCount,
+      has_ai_analysis: hasNewFields,
+
+      sentiment_breakdown: sentimentBreakdown,
+      category_breakdown: categoryBreakdown,
+      user_type_breakdown: userTypeBreakdown,
+    };
+
+    return NextResponse.json(analytics);
   } catch (error) {
     console.error("❌ Error fetching analytics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch analytics" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
   }
 }
 
-
-
-
-
-
-
-
-
+// --------------------
 // PUT endpoint for updating ick engagement
+// --------------------
 export async function PUT(req: Request) {
   try {
     const body: { id?: string; action?: string } = await req.json();
     const { id, action } = body;
 
-    if (!id || !action) return NextResponse.json({ error: "ID and action are required" }, { status: 400 });
+    if (!id || !action)
+      return NextResponse.json({ error: "ID and action are required" }, { status: 400 });
 
-    let updateData: any = {}; // Prisma.IckUpdateInput replaced with `any`
+    let updateData: any = {};
 
     switch (action) {
       case "view":
