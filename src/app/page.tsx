@@ -54,7 +54,7 @@ const DynamicHeroLanding = () => {
   const [currentExample, setCurrentExample] = useState(0);
   const opportunityIcks = [
     "Airport wifi that makes you watch ads to connect",
-    "Parking meters that don't take cards in 2024",
+    "Parking meters that don&apos;t take cards in 2024",
     "Subscription services that hide the cancel button",
     "Apps that require phone numbers for no reason",
     "Websites that auto-play videos with sound",
@@ -65,11 +65,11 @@ const DynamicHeroLanding = () => {
       case "vent":
         return {
           subheadline:
-            "That app that crashes right when you need it? The subscription you can't cancel? Share it here – someone's listening.",
+            "That app that crashes right when you need it? The subscription you cannot cancel? Share it here – someone is listening.",
           description:
-            "Join 3,247 people venting their product frustrations to a community that actually gets it. Your pain is valid, you're not alone, and sometimes your complaints actually get fixed.",
+            "Join 3,247 people venting their product frustrations to a community that actually gets it. Your pain is valid, you re not alone, and sometimes your complaints actually get fixed.",
           primaryCTA: "Start Venting",
-          secondaryCTA: "See Others' Pain",
+          secondaryCTA: "See Other Pains",
           primaryIcon: <MessageSquare size={20} />,
           secondaryIcon: <Eye size={20} />,
           bgGradient: "from-red-500 via-orange-500 to-pink-500",
@@ -77,7 +77,7 @@ const DynamicHeroLanding = () => {
             {
               number: stats.totalIcks.toLocaleString(),
               label: "People Venting Daily",
-              sublabel: "You're not alone",
+              sublabel: "You are not alone",
             },
             {
               number: "847",
@@ -404,25 +404,25 @@ const DynamicHeroLanding = () => {
                 q: userType === "vent" ? "How does my ick matter?" : "How can I find validated opportunities?",
                 a: userType === "vent" 
                   ? "Your ick adds to a collective dataset that helps us analyze product pain points and user frustrations. Every complaint submitted teaches our community what real problems look like and validates shared experiences."
-                  : "Browse through thousands of real user frustrations, sorted by validation score and market opportunity. Each complaint represents a potential business idea that's already been validated by community sentiment.",
+                  : "Browse through thousands of real user frustrations, sorted by validation score and market opportunity. Each complaint represents a potential business idea that&apos;s already been validated by community sentiment.",
               },
               {
                 q: userType === "vent" ? "Will my complaints actually get fixed?" : "How do I know these are real opportunities?",
                 a: userType === "vent"
-                  ? "While we can't guarantee fixes, many companies do monitor user feedback. Your complaints become part of a public record that product teams can discover, and community pressure often leads to real changes."
+                  ? "While we can&apos;t guarantee fixes, many companies do monitor user feedback. Your complaints become part of a public record that product teams can discover, and community pressure often leads to real changes."
                   : "Every opportunity is backed by real user complaints with community validation scores. You can see exactly how many people share the same frustration, making it easier to assess market demand before building.",
               },
               {
                 q: userType === "vent" ? "Is this just venting or does it help?" : "What kind of opportunities can I find?",
                 a: userType === "vent"
-                  ? "It's both! Venting feels good and validates your experience, but it also contributes to a database that helps identify systemic product issues. Your frustration might be the data point that sparks the next big solution."
+                  ? "It&apos;s both! Venting feels good and validates your experience, but it also contributes to a database that helps identify systemic product issues. Your frustration might be the data point that sparks the next big solution."
                   : "From simple browser extensions to full SaaS platforms - opportunities range from quick weekend projects to million-dollar ideas. Each complaint includes context about user pain levels and potential market size.",
               },
               {
                 q: userType === "vent" ? "Can I stay anonymous?" : "How accurate is the opportunity scoring?",
                 a: userType === "vent"
-                  ? "Absolutely. You can share your frustrations without any personal information. We focus on the product problems, not who's reporting them."
-                  : "Our scoring combines community validation, market signals, and technical feasibility analysis. While not perfect, it's based on real user data and helps prioritize which problems are worth solving first.",
+                  ? "Absolutely. You can share your frustrations without any personal information. We focus on the product problems, not who&apos;s reporting them."
+                  : "Our scoring combines community validation, market signals, and technical feasibility analysis. While not perfect, it&apos;s based on real user data and helps prioritize which problems are worth solving first.",
               },
             ].map((item) => (
               <AccordionItem 

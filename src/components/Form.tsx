@@ -9,7 +9,7 @@ export default function IckSubmissionForm(): React.ReactElement {
   const [ick, setIck] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -32,15 +32,15 @@ export default function IckSubmissionForm(): React.ReactElement {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       await response.json();
-      setSubmitStatus('success');
+      setSubmitStatus("success");
       setIck("");
       setSelectedTags([]);
     } catch (err) {
       console.error("Failed to save Ick:", err);
-      setSubmitStatus('error');
+      setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
-      setTimeout(() => setSubmitStatus('idle'), 3000);
+      setTimeout(() => setSubmitStatus("idle"), 3000);
     }
   };
 
@@ -50,20 +50,20 @@ export default function IckSubmissionForm(): React.ReactElement {
       className="relative bg-white/80 backdrop-blur-md border border-orange-200 rounded-3xl shadow-2xl w-full max-w-xl mx-auto p-8 space-y-6 animate-floatIn"
     >
       {/* Feedback */}
-      {submitStatus === 'success' && (
+      {submitStatus === "success" && (
         <div className="flex items-center gap-3 bg-green-100 border border-green-300 rounded-xl p-4">
           <CheckCircle className="w-6 h-6 text-green-600" />
           <span className="text-green-700 font-semibold">Ick submitted successfully! 🎉</span>
         </div>
       )}
-      {submitStatus === 'error' && (
+      {submitStatus === "error" && (
         <div className="flex items-center gap-3 bg-red-100 border border-red-300 rounded-xl p-4">
           <AlertCircle className="w-6 h-6 text-red-600" />
           <span className="text-red-700 font-semibold">Submission failed. Please try again.</span>
         </div>
       )}
 
-      <h2 className="text-2xl font-bold text-slate-800">What's your latest ick?</h2>
+<h2 className="text-2xl font-bold text-slate-800">What&apos;s your latest ick?</h2>
 
       <textarea
         value={ick}
