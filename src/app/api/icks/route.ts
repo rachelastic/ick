@@ -5,16 +5,12 @@ import { analyzeIck } from "@/lib/ai-analysis";
 
 const prisma = new PrismaClient();
 
-// --------------------
-// Type Definitions
-// --------------------
+// Define runtime types for analytics
 type SentimentItem = { sentiment: string; _count: { sentiment: number } };
 type CategoryItem = { category: string; _count: { category: number } };
 type UserTypeItem = { user_type: string; _count: { user_type: number } };
 
-// --------------------
-// GET all icks
-// --------------------
+// GET all icks with optional filtering
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -41,15 +37,13 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json(icks);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching icks:", error);
     return NextResponse.json({ error: "Failed to fetch icks" }, { status: 500 });
   }
 }
 
-// --------------------
-// POST a new ick
-// --------------------
+// POST a new ick with AI analysis
 export async function POST(req: Request) {
   try {
     const body: { content?: string; tags?: string[]; user_type?: string } =
@@ -96,20 +90,29 @@ export async function POST(req: Request) {
 
     console.log("🤖 Analyzing ick with AI...");
     const analysis = await analyzeIck(trimmedContent);
-    console.log("✅ AI Analysis completed:", analysis);
 
-    const combinedTags = [...(Array.isArray(userTags) ? userTags : []), ...analysis.tags];
+    // Fallback values to prevent runtime errors
+    const severity = typeof analysis.severity === "number" ? analysis.severity : 0;
+    const sentiment =
+      typeof analysis.sentiment === "string" ? analysis.sentiment : "neutral";
+    const opportunity_score =
+      typeof analysis.opportunity_score === "number" ? analysis.opportunity_score : 0;
+    const category = typeof analysis.category === "string" ? analysis.category : "minor";
+    const reasoning = typeof analysis.reasoning === "string" ? analysis.reasoning : "";
+    const tags = Array.isArray(analysis.tags) ? analysis.tags : [];
+
+    const combinedTags = [...(Array.isArray(userTags) ? userTags : []), ...tags];
     const uniqueTags = [...new Set(combinedTags)].slice(0, 8);
 
     const newIck = await prisma.ick.create({
       data: {
         content: trimmedContent,
         tags: uniqueTags,
-        severity: analysis.severity,
-        sentiment: analysis.sentiment,
-        opportunity_score: analysis.opportunity_score,
-        category: analysis.category,
-        reasoning: analysis.reasoning,
+        severity,
+        sentiment,
+        opportunity_score,
+        category,
+        reasoning,
         user_type,
         views: 0,
         upvotes: 0,
@@ -118,11 +121,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { ...newIck, analysis: { reasoning: analysis.reasoning, confidence: "high" } },
+      { ...newIck, analysis: { reasoning, confidence: "high" } },
       { status: 201 }
     );
   } catch (error: unknown) {
-    if (error instanceof Error) console.error("❌ Error creating Ick:", error.message);
+    console.error("❌ Error creating Ick:", error);
     return NextResponse.json(
       {
         error: "Failed to analyze and create ick",
@@ -135,9 +138,7 @@ export async function POST(req: Request) {
   }
 }
 
-// --------------------
-// PATCH (analytics)
-// --------------------
+// PATCH analytics
 export async function PATCH() {
   try {
     const totalIcks = await prisma.ick.count();
@@ -151,15 +152,17 @@ export async function PATCH() {
       },
     });
 
-    // Fix: use type inference and then map to clean array
+    // Safe mapping to prevent runtime errors
     const sentimentRaw = await prisma.ick.groupBy({
       by: ["sentiment"],
       _count: { sentiment: true },
     });
-    const sentimentBreakdown: SentimentItem[] = sentimentRaw.map((item) => ({
-      sentiment: item.sentiment,
-      _count: { sentiment: item._count.sentiment },
-    }));
+    const sentimentBreakdown: SentimentItem[] = Array.isArray(sentimentRaw)
+      ? sentimentRaw.map(item => ({
+          sentiment: item.sentiment,
+          _count: { sentiment: item._count.sentiment },
+        }))
+      : [];
 
     const categoryRaw = await prisma.ick.groupBy({
       by: ["category"],
@@ -167,53 +170,41 @@ export async function PATCH() {
       orderBy: { _count: { category: "desc" } },
       take: 10,
     });
-    const categoryBreakdown: CategoryItem[] = categoryRaw.map((item) => ({
-      category: item.category,
-      _count: { category: item._count.category },
-    }));
+    const categoryBreakdown: CategoryItem[] = Array.isArray(categoryRaw)
+      ? categoryRaw.map(item => ({
+          category: item.category,
+          _count: { category: item._count.category },
+        }))
+      : [];
 
     const userTypeRaw = await prisma.ick.groupBy({
       by: ["user_type"],
       _count: { user_type: true },
     });
-    const userTypeBreakdown: UserTypeItem[] = userTypeRaw.map((item) => ({
-      user_type: item.user_type,
-      _count: { user_type: item._count.user_type },
-    }));
+    const userTypeBreakdown: UserTypeItem[] = Array.isArray(userTypeRaw)
+      ? userTypeRaw.map(item => ({
+          user_type: item.user_type,
+          _count: { user_type: item._count.user_type },
+        }))
+      : [];
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayCount = await prisma.ick.count({
-      where: { createdAt: { gte: todayStart } },
+    return NextResponse.json({
+      totalIcks,
+      avgStats,
+      sentimentBreakdown,
+      categoryBreakdown,
+      userTypeBreakdown,
     });
-
-    const highSeverityCount = await prisma.ick.count({
-      where: { severity: { gte: 8 } },
-    });
-
-    const analytics = {
-      total_icks: totalIcks,
-      avg_severity: avgStats._avg.severity,
-      avg_opportunity: hasNewFields ? avgStats._avg.opportunity_score : null,
-      today_count: todayCount,
-      high_severity_count: highSeverityCount,
-      has_ai_analysis: hasNewFields,
-
-      sentiment_breakdown: sentimentBreakdown,
-      category_breakdown: categoryBreakdown,
-      user_type_breakdown: userTypeBreakdown,
-    };
-
-    return NextResponse.json(analytics);
   } catch (error) {
     console.error("❌ Error fetching analytics:", error);
-    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch analytics" },
+      { status: 500 }
+    );
   }
 }
 
-// --------------------
 // PUT endpoint for updating ick engagement
-// --------------------
 export async function PUT(req: Request) {
   try {
     const body: { id?: string; action?: string } = await req.json();
