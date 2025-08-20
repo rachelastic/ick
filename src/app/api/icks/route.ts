@@ -364,7 +364,7 @@ export async function PUT(req: Request) {
 
     await prisma.$connect();
 
-    const updatedIck = await prisma.ck.update({
+    const updatedIck = await prisma.ick.update({
       where: { id: numericId },
       data: updateData,
     });
