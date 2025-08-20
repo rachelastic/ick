@@ -55,6 +55,9 @@ export async function GET(req: Request) {
 
 // POST a new ick with AI analysis
 export async function POST(req: Request) {
+  console.log("🔍 Environment check:", {
+    hasGemini: !!process.env.GEMINI_API_KEY,
+  });
   try {
     // Add request body validation
     let body;
