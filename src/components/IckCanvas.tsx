@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Zap, AlertTriangle, ThumbsDown, Eye, Maximize2, Minimize2, RotateCcw, Filter } from "lucide-react";
+import { Zap, AlertTriangle, ThumbsDown, Eye, Maximize2, Minimize2, RotateCcw, Filter, Loader2 } from "lucide-react";
 
 type IckType = {
   id: number;
@@ -14,6 +14,8 @@ type IckType = {
 
 const RevampedIckCanvas = () => {
   const [icks, setIcks] = useState<IckType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedIck, setSelectedIck] = useState<IckType | null>(null);
   const [viewMode, setViewMode] = useState<'gravity' | 'cluster' | 'timeline'>('gravity');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -22,16 +24,49 @@ const RevampedIckCanvas = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const animationRef = useRef<number | null>(null);
 
-  // Mock data for demonstration
   useEffect(() => {
-    fetch("/api/icks")
-      .then(res => res.json())
-      .then((data: IckType[]) => setIcks(data))
-      .catch(err => console.error("Failed to fetch icks:", err));
+    const fetchIcks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch("/api/icks");
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Ensure data is always an array and validate items
+        const icksArray = Array.isArray(data) ? data : [];
+        const validIcks = icksArray.filter(ick => 
+          ick && 
+          typeof ick.id === 'number' && 
+          typeof ick.content === 'string'
+        ).map(ick => ({
+          ...ick,
+          tags: Array.isArray(ick.tags) ? ick.tags : [],
+          sentiment: ick.sentiment || 'neutral',
+          severity: ick.severity || 5,
+          createdAt: ick.createdAt || new Date().toISOString()
+        }));
+        
+        setIcks(validIcks);
+      } catch (err) {
+        console.error("Failed to fetch icks:", err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        setIcks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIcks();
   }, []);
 
   const normalizeSeverity = (severity: number | string): number => {
-    if (typeof severity === 'number') return severity;
+    if (typeof severity === 'number') return Math.max(1, Math.min(10, severity));
     switch (severity) {
       case 'high': return 8;
       case 'medium': return 5;
@@ -112,7 +147,7 @@ const RevampedIckCanvas = () => {
     }
   }, [viewMode, icks]);
 
-  const filteredIcks = filterBySeverity 
+  const filteredIcks = Array.isArray(icks) && filterBySeverity 
     ? icks.filter(ick => {
         const severity = normalizeSeverity(ick.severity);
         switch(filterBySeverity) {
@@ -128,6 +163,50 @@ const RevampedIckCanvas = () => {
     // Force re-render by updating a state that triggers position recalculation
     setIcks(prev => [...prev]);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="relative bg-gradient-to-br from-slate-50 via-orange-50 to-pink-50 border border-slate-200 rounded-2xl overflow-hidden shadow-lg w-full h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-slate-600 font-semibold">Loading icks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="relative bg-gradient-to-br from-slate-50 via-orange-50 to-pink-50 border border-slate-200 rounded-2xl overflow-hidden shadow-lg w-full h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Canvas Error</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!Array.isArray(icks) || icks.length === 0) {
+    return (
+      <div className="relative bg-gradient-to-br from-slate-50 via-orange-50 to-pink-50 border border-slate-200 rounded-2xl overflow-hidden shadow-lg w-full h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🤔</div>
+          <h3 className="text-lg font-semibold text-slate-600 mb-2">No Icks to Display</h3>
+          <p className="text-slate-500">Share your first ick to see the canvas come to life!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative bg-gradient-to-br from-slate-50 via-orange-50 to-pink-50 border border-slate-200 rounded-2xl overflow-hidden shadow-lg ${isFullscreen ? 'fixed inset-4 z-50' : 'w-full h-[600px]'}`}>
@@ -220,7 +299,7 @@ const RevampedIckCanvas = () => {
         </div>
 
         {/* ICK Bubbles */}
-        {filteredIcks.map((ick, index) => {
+        {Array.isArray(filteredIcks) && filteredIcks.map((ick, index) => {
           const severity = normalizeSeverity(ick.severity);
           const size = getIckSize(severity);
           const colors = getSeverityColor(severity);
@@ -309,7 +388,7 @@ const RevampedIckCanvas = () => {
                 <span className="text-sm text-slate-500 capitalize">{selectedIck.sentiment}</span>
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-2">{selectedIck.content}</h3>
-              {selectedIck.tags && (
+              {selectedIck.tags && Array.isArray(selectedIck.tags) && selectedIck.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {selectedIck.tags.map(tag => (
                     <span key={tag} className="bg-slate-100 text-slate-600 px-2 py-1 rounded-full text-xs">
