@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     // Add database connection check
     await prisma.$connect();
     
-    const icks = await prisma.ick.findMany({
+    const icks = await prisma.Ick.findMany({
       where,
       orderBy: { createdAt: "desc" },
       take: limit ? parseInt(limit, 10) : undefined,
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
     await prisma.$connect();
 
     // Duplicate detection with better error handling
-    const recentIck = await prisma.ick.findFirst({
+    const recentIck = await prisma.Ick.findFirst({
       where: {
         content: trimmedContent,
         createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
     const combinedTags = [...(Array.isArray(userTags) ? userTags : []), ...tags];
     const uniqueTags = [...new Set(combinedTags.map(tag => String(tag)))].slice(0, 8);
 
-    const newIck = await prisma.ick.create({
+    const newIck = await prisma.Ick.create({
       data: {
         content: trimmedContent,
         tags: uniqueTags,
@@ -231,11 +231,11 @@ export async function PATCH() {
   try {
     await prisma.$connect();
     
-    const totalIcks = await prisma.ick.count();
-    const sampleIck = await prisma.ick.findFirst();
+    const totalIcks = await prisma.Ick.count();
+    const sampleIck = await prisma.Ick.findFirst();
     const hasNewFields = sampleIck && "opportunity_score" in sampleIck;
 
-    const avgStats = await prisma.ick.aggregate({
+    const avgStats = await prisma.Ick.aggregate({
       _avg: {
         severity: true,
         ...(hasNewFields ? { opportunity_score: true } : {}),
@@ -243,7 +243,7 @@ export async function PATCH() {
     });
 
     // Safe mapping to prevent runtime errors with better error handling
-    const sentimentRaw = await prisma.ick.groupBy({
+    const sentimentRaw = await prisma.Ick.groupBy({
       by: ["sentiment"],
       _count: { sentiment: true },
     });
@@ -254,7 +254,7 @@ export async function PATCH() {
         }))
       : [];
 
-    const categoryRaw = await prisma.ick.groupBy({
+    const categoryRaw = await prisma.Ick.groupBy({
       by: ["category"],
       _count: { category: true },
       orderBy: { _count: { category: "desc" } },
@@ -267,7 +267,7 @@ export async function PATCH() {
         }))
       : [];
 
-    const userTypeRaw = await prisma.ick.groupBy({
+    const userTypeRaw = await prisma.Ick.groupBy({
       by: ["user_type"],
       _count: { user_type: true },
     });
@@ -355,7 +355,7 @@ export async function PUT(req: Request) {
 
     await prisma.$connect();
 
-    const updatedIck = await prisma.ick.update({
+    const updatedIck = await prisma.Ick.update({
       where: { id: numericId },
       data: updateData,
     });
