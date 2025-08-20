@@ -1,45 +1,28 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Ick {
-  id               Int      @id @default(autoincrement())
-  content          String
-  tags             String[] // stores array of tags
-  severity         Int      @default(1) // 1-10 scale
-  sentiment        String   @default("neutral") // "gross", "no way", "acceptable"
-  opportunity_score Int     @default(5) // 1-10 business opportunity potential
-  category         String   @default("general") // main category like "tech", "social", "work", etc.
-  reasoning        String?  // AI's reasoning for the analysis
-  user_type        String   @default("venter") // "venter", "hunter", "both"
-  
-  // Metadata
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  // Optional user tracking (for future features)
-  user_id          String?  // Anonymous ID or user ID if you add auth
-  ip_hash          String?  // Hashed IP for basic spam prevention
-  
-  // Engagement metrics (for future features)
-  views            Int      @default(0)
-  upvotes          Int      @default(0)
-  downvotes        Int      @default(0)
-  
-  @@index([createdAt])
-  @@index([category])
-  @@index([sentiment])
-  @@index([severity])
-  @@index([opportunity_score])
+  id                Int       @id @default(autoincrement())
+  content           String
+  tags              String[]  @default([])
+  severity          Int?      @default(1)
+  sentiment         String?   @default("neutral")
+  opportunity_score Int?      @default(5)
+  category          String?   @default("general")
+  reasoning         String?
+  user_type         String?   @default("venter")
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  user_id           String?
+  ip_hash           String?
+  views             Int?      @default(0)
+  upvotes           Int?      @default(0)
+  downvotes         Int?      @default(0)
 }
