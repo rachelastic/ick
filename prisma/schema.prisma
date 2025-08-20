@@ -18,11 +18,17 @@ model Ick {
   category          String?   @default("general")
   reasoning         String?
   user_type         String?   @default("venter")
-  created_at        DateTime? @default(now()) @db.Timestamp(6)
-  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
   user_id           String?
   ip_hash           String?
   views             Int?      @default(0)
   upvotes           Int?      @default(0)
   downvotes         Int?      @default(0)
+  
+  @@index([createdAt])
+  @@index([category])
+  @@index([sentiment])
+  @@index([severity])
+  @@index([opportunity_score])
 }
