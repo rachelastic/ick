@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const NavBar = () => {
   return (
-    <nav className="flex justify-between items-center px-6 py-4 shadow-md top-0 w-full bg-gradient-to-r bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-md">
+    <nav className="flex justify-between items-center px-2 py-2 shadow-md top-0 w-full bg-gradient-to-r bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-md">
       <Link href="/">
-        <span className="text-xl font-bold text-[var(--sidebar-foreground)]">
-          this gives me the ick
-        </span>
+      <Image src="/cream.png" width={48} height={48} alt="pfp"></Image>
       </Link>
+     
 
       <ul className="flex gap-6 text-rose-500 font-bold text-sm font-medium text-[var(--muted-foreground)]">
         <li>
